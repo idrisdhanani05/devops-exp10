@@ -5,28 +5,33 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out source code from GitHub...'
+                echo 'Checking out source code from GitHub'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Building the Maven project...'
-                bat 'mvn clean compile'
+                bat 'mvn clean package'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running unit tests...'
                 bat 'mvn test'
             }
         }
 
-        stage('Package') {
+        stage('Docker Build') {
             steps {
-                echo 'Packaging the application...'
-                bat 'mvn package -DskipTests'
+                bat 'docker build -t devops-app:latest .'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat 'kubectl apply -f k8s/deployment.yaml'
+                bat 'kubectl apply -f k8s/service.yaml'
+                bat 'kubectl rollout status deployment/devops-app'
             }
         }
     }
@@ -37,7 +42,7 @@ pipeline {
         }
 
         failure {
-            echo 'PIPELINE FAILED. CHECK THE CONSOLE OUTPUT.'
+            echo 'DEVOPS PIPELINE FAILED!'
         }
     }
 }
